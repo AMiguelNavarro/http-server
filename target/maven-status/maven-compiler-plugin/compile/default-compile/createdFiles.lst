@@ -1,1 +1,6 @@
-Main.class
+com/alberto/httpserver/config/Configuration.class
+com/alberto/httpserver/config/ConfigurationManager.class
+com/alberto/httpserver/util/Json.class
+com/alberto/httpserver/config/exception/HttpConfigException.class
+com/alberto/httpserver/core/ServerListenerThread.class
+com/alberto/httpserver/HttpServer.class

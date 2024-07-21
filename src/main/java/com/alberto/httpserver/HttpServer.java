@@ -2,6 +2,9 @@ package com.alberto.httpserver;
 
 import com.alberto.httpserver.config.Configuration;
 import com.alberto.httpserver.config.ConfigurationManager;
+import com.alberto.httpserver.core.ServerListenerThread;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,53 +17,27 @@ import java.net.Socket;
  */
 public class HttpServer {
 
+    private final static Logger LOGGER = LoggerFactory.getLogger(HttpServer.class);
     private static final String JSON_PATH = "src/main/resources/http.json";
-    private static final String CRLF = "\n\r"; // 13, 10
 
     public static void main(String[] args) {
-        System.out.println("Server starting...");
+        LOGGER.info("Server starting...");
+        loadConfigFile();
+        Configuration config = ConfigurationManager.getInstance().getCurrentConfig();
 
-        ConfigurationManager configManager = ConfigurationManager.getInstance();
-        configManager.loadConfigFile(JSON_PATH);
-        Configuration currentConfig = configManager.getCurrentConfig();
+        LOGGER.info("Using port: {}", config.getPort());
+        LOGGER.info("Using web root: {}", config.getWebRoot());
 
-        System.out.println("Using port: " + currentConfig.getPort());
-        System.out.println("Using web root: " + currentConfig.getWebRoot());
-
-        try (ServerSocket serverSocket = new ServerSocket(currentConfig.getPort())) {
-            Socket socket = serverSocket.accept();
-
-            InputStream inputStream = socket.getInputStream(); // Read request from browser
-            OutputStream outputStream = socket.getOutputStream(); // Write response to browser
-
-            // READ
-
-            // WRITE
-            String defaultHTMLPage = getDefaultHTMLPage();
-            String response =
-                    "HTTP/1.1 200 OK" + CRLF + // Status line : HTTP VERSION RESPONSE_CODE RESPONSE_MESSAGE
-                    "Content-Length: " + defaultHTMLPage.getBytes().length + CRLF + // HEADER
-                    CRLF +
-                    defaultHTMLPage +
-                    CRLF + CRLF;
-
-            outputStream.write(response.getBytes());
-
-            inputStream.close();
-            outputStream.close();
+        try {
+            ServerListenerThread serverListenerThread = new ServerListenerThread(config.getPort(), config.getWebRoot());
+            serverListenerThread.start();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            LOGGER.info("Error with server listener thread{}", e.getLocalizedMessage());
         }
 
-        System.out.println("Server finished");
     }
 
-    private static String getDefaultHTMLPage() {
-        return "<html>" +
-                "<head>" +
-                "<title>Simple java HTTP server</title>" +
-                "</head>" +
-                "<body>This page was served using my simple java HTTP server</body>" +
-                "</html>";
+    private static void loadConfigFile() {
+        ConfigurationManager.getInstance().loadConfigFile(JSON_PATH);
     }
 }
